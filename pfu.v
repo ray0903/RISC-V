@@ -11,7 +11,7 @@ module PFU (
     //****** Central control Interface ******//
     input                                 ctrl2pfu_flush_i,
     input                                 ctrl2pfu_stall_i,
-    input  [`PC_WIDHT-1:0]                ctrl2pfu_force_pc_i,
+    input        [`PC_WIDHT-1:0]          ctrl2pfu_force_pc_i,
     input                                 ctrl2pfu_valid_i,
     output                                pfu2ctrl_ready_o
 );
@@ -35,8 +35,17 @@ wire                                 pfu_dpu_handshake;
 wire                                 push_valid;
 wire                                 ahb_req;
 
+wire                                 inst_fifo_wr;
+wire                                 inst_fifo_rd;
+wire                                 inst_fifo_ne;
+wire                                 inst_fifo_full;
+
 
 wire [`PC_WIDHT-1:0]                 force_pc;     //from ctrl
+wire [6:0]                           opcode;
+wire [2:0]                           funct3;
+wire [4:0]                           rd;
+wire [4:0]                           rs1;   
 
 
 assign pfu_ctrl_handshake = ctrl2pfu_valid_i & pfu2ctrl_ready_o;
@@ -55,13 +64,13 @@ end
 always @(*) begin
     case (cur_state)
         IDLE: begin
-            if (pfu_ctrl_handshake & pfu_stall_i) begin
+            if (pfu_ctrl_handshake & ctrl2pfu_stall_i) begin
                 nxt_state = BLOCK;
             end
             else if (pfu_ctrl_handshake & ctrl2pfu_flush_i) begin
                 nxt_state = FORCE;
             end
-            else if (!pfu_stall_i) begin   //first stall do not need handshake
+            else if (!ctrl2pfu_stall_i) begin   //first stall do not need handshake
                 nxt_state = SEQ_FETCH;
             end
             else begin
@@ -70,7 +79,7 @@ always @(*) begin
         end
 
         SEQ_FETCH: begin
-            if (pfu_ctrl_handshake & pfu_stall_i) begin
+            if (pfu_ctrl_handshake & ctrl2pfu_stall_i) begin
                 nxt_state = BLOCK;
             end
             else if (pfu_ctrl_handshake & ctrl2pfu_flush_i) begin
@@ -85,7 +94,7 @@ always @(*) begin
         end
 
         BRANCH_FETCH: begin
-            if (pfu_ctrl_handshake & pfu_stall_i) begin
+            if (pfu_ctrl_handshake & ctrl2pfu_stall_i) begin
                 nxt_state = BLOCK;
             end
             else if (pfu_ctrl_handshake & ctrl2pfu_flush_i) begin
@@ -100,7 +109,7 @@ always @(*) begin
         end
 
         FORCE: begin
-            if (pfu_ctrl_handshake & pfu_stall_i) begin
+            if (pfu_ctrl_handshake & ctrl2pfu_stall_i) begin
                 nxt_state = BLOCK;
             end
             else if (pfu_ctrl_handshake & ctrl2pfu_flush_i) begin
@@ -115,7 +124,7 @@ always @(*) begin
         end
 
         BLOCK: begin
-            if (pfu_ctrl_handshake & ~pfu_stall_i) begin
+            if (pfu_ctrl_handshake & ~ctrl2pfu_stall_i) begin
                 nxt_state = SEQ_FETCH;
             end
             else if (pfu_ctrl_handshake & ctrl2pfu_flush_i) begin
@@ -141,6 +150,17 @@ assign pc_gen = (nxt_state == IDLE)  ? `INIT_PC :
                 (nxt_state == BLOCK) ? seq_pc :
                 (nxt_state == SEQ)   ? branch_pc :
                                        seq_pc;
+assign opcode     = pfu2dpu_inst_o[6:0];
+assign rd         = pfu2dpu_inst_o[11:7];
+assign rs1        = pfu2dpu_inst_o[19:15];
+assign funct3     = pfu2dpu_inst_o[14:12];
+
+assign push_valid =  ((opcode == `JAL_OPCODE) | (opcde == `JALR_OPCODE)) 
+                   & (rd==`X_RA) & pfu_dpu_handshake; //jal or jalr and rd is x1
+
+assign pop_valid  =  (opcode == `JAL_OPCODE) 
+                   & (funct3 == 3'b000)
+                   & (rs1==`X_SP) & pfu_dpu_handshake; //jal and rs1 is x1        
 
 always@(posedge clk_i or posedge rst_i) begin
     if (rst_i) begin
@@ -159,7 +179,7 @@ always@(posedge clk_i or posedge rst_i) begin
         branch_pc <= `INIT_PC;
     end
     else if (push_valid & bus_ready) begin
-        branch_pc <= pc_gen + 4;
+        branch_pc <= pfu2dpu_pc_o + 4;
         branch_pc_valid <= 1'b1;
     end
     else if(pop_valid & bus_ready) begin
@@ -174,7 +194,8 @@ end
 //****** end of pc generator ******//
     
 //****** ahb master ******//
-assign ahb_req = nxt_state != BLOCK; //when not stall, request a new instruction
+assign ahb_req = (nxt_state != BLOCK) & dpu2pfu_ready_i;
+               
 AHB_MASTER u_ahb_master (
     .hclk_i        (clk_i                                 ),
     .hresetn_i     (~rst_i                                ),
@@ -199,6 +220,24 @@ AHB_MASTER u_ahb_master (
     .hwdata_o      (pfu_ahb_hwdata_o                      )
 );
 //****** end of ahb master ******//
+
+//****** output ******//
+assign pfu2ctrl_ready_o = bus_ready;
+assign pfu2dpu_inst_o   = pfu_hrdata_i;
+always@(posedge clk_i or posedge rst_i) begin
+    if (rst_i) begin
+        pfu2dpu_pc_o    <= `INIT_PC;
+        pfu2dpu_valid_o <= 1'b0;
+    end
+    else if (ahb_req & bus_ready) begin
+        pfu2dpu_pc_o    <= pc_gen;
+        pfu2dpu_valid_o <= 1'b1;
+    end
+    else if(~ahb_req & bus_ready)begin
+        pfu2dpu_pc_o    <= pfu2dpu_pc_o;
+        pfu2dpu_valid_o <= 1'b0; //clear valid when handshake
+    end
+end
 
 
 
