@@ -2,7 +2,7 @@
 `define RV32I_DECODE_DEFS_VH
 // ============================================================
 // RV32I decode defines (opcodes / functs / field & imm helpers)
-// Author: <you>
+// Author: <Ray>
 // Note: RV32I only (no M/A/F/D/C extensions)
 // ============================================================
 
@@ -177,5 +177,22 @@
 // ------------------------ Other -----------------------------
 // NOP (semantically): addi x0, x0, 0
 `define IS_NOP(i)         ( `IS_ADDI(i) && (`RD(i)==`X_ZERO) && (`RS1(i)==`X_ZERO) && (`I_IMM(i)==12'd0) )
+
+// ------------------------ Registers needed by instructions ---
+// Macro to determine if instruction needs rs1 register
+`define NEED_RS1(i)       ( `IS_OP(i) || `IS_OP_IMM(i) || `IS_LOAD(i) || `IS_STORE(i) || `IS_BRANCH(i) || `IS_JALR(i) || `IS_CSRRW(i) || `IS_CSRRS(i) || `IS_CSRRC(i) || `IS_CSRRWI(i) || `IS_CSRRSI(i) || `IS_CSRRCI(i) )
+
+// Macro to determine if instruction needs rs2 register
+`define NEED_RS2(i)       ( `IS_OP(i) || `IS_STORE(i) || `IS_BRANCH(i) )
+
+// Macro to determine if instruction writes to rd
+`define NEED_RD(i) ( \
+    `IS_OP(i)       || `IS_OP_IMM(i)   || \
+    `IS_LOAD(i)     || \
+    `IS_JAL(i)      || `IS_JALR(i)     || \
+    `IS_LUI(i)      || `IS_AUIPC(i)    || \
+    `IS_CSRRW(i)    || `IS_CSRRS(i)    || `IS_CSRRC(i) || \
+    `IS_CSRRWI(i)   || `IS_CSRRSI(i)   || `IS_CSRRCI(i) \
+)
 
 `endif // RV32I_DECODE_DEFS_VH
