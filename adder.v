@@ -1,4 +1,4 @@
-module rv_addsub_cmp #(
+module ADDER #(
   parameter XLEN = 32
 )(
   input  [XLEN-1:0] a_i,

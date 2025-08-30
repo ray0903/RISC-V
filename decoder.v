@@ -30,7 +30,7 @@ module decoder (
     output        [31:0]       imm_o,
     output reg    [7:0]        normal_logic_used_o,
     output                     adder_used_o,
-    output reg                 adder_result_sel_o, 
+    output reg    [6:0]        adder_result_sel_o, 
     output reg                 rd_result_sel_o,
     output reg                 csr_result_sel_o,
     output reg                 pc_result_sel_o
