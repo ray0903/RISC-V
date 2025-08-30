@@ -160,6 +160,7 @@
 // ------------------------ SYSTEM / PRIV / CSR ---------------
 `define IS_ECALL(i)       ( `IS_SYSTEM(i) && `FUNCT3(i)==`F3_PRIV && `I_IMM(i)==12'd0 )
 `define IS_EBREAK(i)      ( `IS_SYSTEM(i) && `FUNCT3(i)==`F3_PRIV && `I_IMM(i)==12'd1 )
+`define IS_MRET(i)        ( `IS_SYSTEM(i) && `FUNCT3(i)==`F3_PRIV && `I_IMM(i)==12'h302 )
 
 `define IS_CSRRW(i)       ( `IS_SYSTEM(i) && `FUNCT3(i)==`F3_CSRRW )
 `define IS_CSRRS(i)       ( `IS_SYSTEM(i) && `FUNCT3(i)==`F3_CSRRS )
@@ -224,9 +225,6 @@
     `IS_CSRRWI(i) || `IS_CSRRSI(i) || `IS_CSRRCI(i) \
 )
 
-`define NEED_CONST_4(i) ( \
-    `IS_JAL(i) || `IS_JALR(i) \
-)
 
 `define NEED_SHAMT(i) ( \
     `IS_SLLI(i) || `IS_SRLI(i) || `IS_SRAI(i) \
