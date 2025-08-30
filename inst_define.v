@@ -195,4 +195,41 @@
     `IS_CSRRWI(i)   || `IS_CSRRSI(i)   || `IS_CSRRCI(i) \
 )
 
+// Macro to determine if instruction uses an immediate field
+// Includes all RV32I formats that carry an immediate: I/S/B/U/J and SYSTEM
+`define NEED_IMM(i) ( \
+    `IS_OP_IMM(i)   || `IS_LOAD(i)   || `IS_STORE(i) || \
+    `IS_BRANCH(i)   || `IS_JAL(i)    || `IS_JALR(i)  || \
+    `IS_LUI(i)      || `IS_AUIPC(i)  || \
+    `IS_SYSTEM(i) \
+)
+
+// Macro to determine if instruction needs the PC as an operand
+// Used for PC-relative forms (targets or results based on PC): AUIPC, JAL, BRANCH
+// Note: JALR target is rs1+imm, so PC is not an operand (though rd gets PC+4).
+`define NEED_PC(i)  ( `IS_AUIPC(i) || `IS_JAL(i) || `IS_BRANCH(i) )
+
+// Macro to determine if instruction needs constant zero as an operand
+// RV32I: LUI result can be formed as 0 + U_IMM
+`define NEED_ZERO(i) ( `IS_LUI(i) )
+
+// Macro to determine if instruction accesses CSR
+// True for all CSR read/modify/write forms, excluding ECALL/EBREAK
+`define NEED_CSR(i) ( \
+    `IS_CSRRW(i)  || `IS_CSRRS(i)  || `IS_CSRRC(i) || \
+    `IS_CSRRWI(i) || `IS_CSRRSI(i) || `IS_CSRRCI(i) \
+)
+
+`define NEED_ZIMM(i) ( \
+    `IS_CSRRWI(i) || `IS_CSRRSI(i) || `IS_CSRRCI(i) \
+)
+
+`define NEED_CONST_4(i) ( \
+    `IS_JAL(i) || `IS_JALR(i) \
+)
+
+`define NEED_SHAMT(i) ( \
+    `IS_SLLI(i) || `IS_SRLI(i) || `IS_SRAI(i) \
+)
+
 `endif // RV32I_DECODE_DEFS_VH
