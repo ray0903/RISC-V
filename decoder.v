@@ -1,4 +1,4 @@
-module decoder (
+module DECODER (
     input         [31:0]       inst_i,
     input         [31:0]       rs1_i,
     input         [31:0]       rs2_i,
@@ -10,7 +10,7 @@ module decoder (
     output                     is_jal_o,    //for force pc
     output                     is_jalr_o,   //for force pc
     //output                   is_auipc_o,
-    //output                   is_lui_o,
+    output                     is_lui_o,
     output                     is_ecall_o,
     output                     is_ebreak_o
     output                     is_mret_o,    //for force pc
@@ -26,11 +26,10 @@ module decoder (
     output        [31:0]       alu_op2_o,
     output                     csr_used_o,
     output        [11:0]       csr_addr_o,
-    output        [2:0]        csr_op_o,
     output        [31:0]       imm_o,
     output reg    [7:0]        normal_logic_used_o,
     output                     adder_used_o,
-    output reg    [6:0]        adder_result_sel_o, 
+    output reg    [5:0]        logic_adder_result_sel_o, 
     output reg                 rd_result_sel_o,
     output reg                 csr_result_sel_o,
     output reg                 pc_result_sel_o
@@ -92,20 +91,16 @@ assign csr_used_o =   IS_CSRRW(inst_i)
 
 assign csr_zimm5  = {27'd0,inst_i[19:15]};
 assign csr_addr_o = inst_i[31:20];
-assign csr_op_o   = (`FUNCT3(inst_i) == `F3_CSRRW || `FUNCT3(inst_i) == `F3_CSRRWI) ? CSR_OP_RW :
-                    (`FUNCT3(inst_i) == `F3_CSRRS || `FUNCT3(inst_i) == `F3_CSRRSI) ? CSR_OP_RS :
-                    (`FUNCT3(inst_i) == `F3_CSRRC || `FUNCT3(inst_i) == `F3_CSRRCI) ? CSR_OP_RC :
-                    CSR_OP_NONE;
 
 assign is_branch_o = (opcode == `OPCODE_BRANCH);
 assign is_ld_st_o  = (opcode == `OPCODE_LOAD) | (opcode == `OPCODE_STORE);
 assign is_jal_o    = (opcode == `OPCODE_JAL);
 assign is_jalr_o   = (opcode == `OPCODE_JALR);
-assign is_auipc_o  = (opcode == `OPCODE_AUIPC);
+//assign is_auipc_o  = (opcode == `OPCODE_AUIPC);
 assign is_ecall_o  = (inst_i == `INST_ECALL);
 assign is_ebreak_o = (inst_i == `INST_EBREAK);
 assign is_mret_o   = (inst_i == `INST_MRET);
-//assign is_lui_o    = (opcode == `OPCODE_LUI);   
+assign is_lui_o    = (opcode == `OPCODE_LUI);   
 assign is_sub_o    = `IS_SUB(inst_i);    
 
 always@(*)begin
@@ -129,11 +124,11 @@ always@(*)begin
 end
 
 wire adder_used_o =  `IS_ADD(inst_i) | `IS_ADDI(inst_i) 
-                   | `IS_SUB(inst_i) | `IS_SLT(inst_i) | `IS_SLTU(inst_i) | `IS_SLTI(inst_i) | `IS_SLTIU(inst_i)
-                   | `IS_BEQ(inst_i) | `IS_BNE(inst_i) | `IS_BLT(inst_i) | `IS_BGE(inst_i) | `IS_BLTU(inst_i) | `IS_BGEU(inst_i)
+                   | `IS_SUB(inst_i) 
                    | `IS_LB(inst_i)  | `IS_LH(inst_i)  | `IS_LW(inst_i)  | `IS_LBU(inst_i)  | `IS_LHU(inst_i)
                    | `IS_SB(inst_i)  | `IS_SH(inst_i)  | `IS_SW(inst_i)
-                   | `IS_JAL(inst_i) | `IS_JALR(inst_i)
+                   | `IS_JAL(inst_i) | `IS_JALR(inst_i) 
+                   | `IS_BEQ(inst_i) | `IS_BNE(inst_i) | `IS_BLT(inst_i)  | `IS_BGE(inst_i) | `IS_BLTU(inst_i) | `IS_BGEU(inst_i)
                    | `IS_AUIPC(inst_i);   
 
 always@(*)begin
@@ -152,13 +147,13 @@ end
 
 always@(*)begin
     case(1)
-        `IS_BEQ(inst_i)                                        : adder_result_sel_o = 7'b000_0001;  //use adder eq flag
-        `IS_BNE(inst_i)                                        : adder_result_sel_o = 7'b000_0010;  //use adder ne flag
-        `IS_BLT(inst_i)  | `IS_SLTU(inst_i) | `IS_SLTIU(inst_i): adder_result_sel_o = 7'b000_0100;  //use adder less than flag(unsigned) 
-        `IS_BGE(inst_i)                                        : adder_result_sel_o = 7'b000_1000;  //use adder greater equal flag(unsigned)
-        `IS_BLTU(inst_i) | `IS_SLT(inst_i) | `IS_SLTI(inst_i)  : adder_result_sel_o = 7'b001_0000;  //use adder less than flag(signed)
-        `IS_BGEU(inst_i)                                       : adder_result_sel_o = 7'b010_0000;  //use adder greater equal flag(signed)
-        default                                                : adder_result_sel_o = {adder_used_o,6'b00_0000};  //default adder
+        `IS_BEQ(inst_i)                                        : adder_result_sel_o = 6'b00_0001;  //use adder eq flag
+        `IS_BNE(inst_i)                                        : adder_result_sel_o = 6'b00_0010;  //use adder ne flag
+        `IS_BLT(inst_i)  | `IS_SLTU(inst_i) | `IS_SLTIU(inst_i): adder_result_sel_o = 6'b00_0100;  //use adder less than flag(unsigned) 
+        `IS_BGE(inst_i)                                        : adder_result_sel_o = 6'b00_1000;  //use adder greater equal flag(unsigned)
+        `IS_BLTU(inst_i) | `IS_SLT(inst_i) | `IS_SLTI(inst_i)  : adder_result_sel_o = 6'b01_0000;  //use adder less than flag(signed)
+        `IS_BGEU(inst_i)                                       : adder_result_sel_o = 6'b10_0000;  //use adder greater equal flag(signed)
+        default                                                : adder_result_sel_o = 6'b00_0000;  //default adder
     endcase 
 end
 
