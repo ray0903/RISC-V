@@ -147,13 +147,13 @@ end
 
 always@(*)begin
     case(1)
-        `IS_BEQ(inst_i)                                        : adder_result_sel_o = 6'b00_0001;  //use adder eq flag
-        `IS_BNE(inst_i)                                        : adder_result_sel_o = 6'b00_0010;  //use adder ne flag
-        `IS_BLT(inst_i)  | `IS_SLTU(inst_i) | `IS_SLTIU(inst_i): adder_result_sel_o = 6'b00_0100;  //use adder less than flag(unsigned) 
-        `IS_BGE(inst_i)                                        : adder_result_sel_o = 6'b00_1000;  //use adder greater equal flag(unsigned)
-        `IS_BLTU(inst_i) | `IS_SLT(inst_i) | `IS_SLTI(inst_i)  : adder_result_sel_o = 6'b01_0000;  //use adder less than flag(signed)
-        `IS_BGEU(inst_i)                                       : adder_result_sel_o = 6'b10_0000;  //use adder greater equal flag(signed)
-        default                                                : adder_result_sel_o = 6'b00_0000;  //default adder
+        `IS_BEQ(inst_i)                                        : logic_adder_result_sel_o = 6'b00_0001;  //use adder eq flag
+        `IS_BNE(inst_i)                                        : logic_adder_result_sel_o = 6'b00_0010;  //use adder ne flag
+        `IS_BLT(inst_i)  | `IS_SLTU(inst_i) | `IS_SLTIU(inst_i): logic_adder_result_sel_o = 6'b00_0100;  //use adder less than flag(unsigned) 
+        `IS_BGE(inst_i)                                        : logic_adder_result_sel_o = 6'b00_1000;  //use adder greater equal flag(unsigned)
+        `IS_BLTU(inst_i) | `IS_SLT(inst_i) | `IS_SLTI(inst_i)  : logic_adder_result_sel_o = 6'b01_0000;  //use adder less than flag(signed)
+        `IS_BGEU(inst_i)                                       : logic_adder_result_sel_o = 6'b10_0000;  //use adder greater equal flag(signed)
+        default                                                : logic_adder_result_sel_o = 6'b00_0000;  //default adder
     endcase 
 end
 

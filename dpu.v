@@ -37,50 +37,75 @@ end
 //****** decode phase ******//
 wire       [`XLEN-1:0]                     rs1_data_dec;
 wire       [`XLEN-1:0]                     rs2_data_dec;
+wire       [`XLEN-1:0]                     csr_data_dec;
 
 wire       [`RF_ADDR_WIDTH-1:0]            rd_addr_dec;
 wire       [`RF_ADDR_WIDTH-1:0]            rs1_addr_dec;
 wire       [`RF_ADDR_WIDTH-1:0]            rs2_addr_dec;
+wire                                       is_sub_dec;
 wire                                       is_jalr_dec;
 wire                                       is_jal_dec;
 wire                                       is_branch_dec;
 wire                                       is_ld_st_dec;
 wire                                       is_auipc_dec;
 wire                                       is_lui_dec;
+wire                                       is_ecall_dec;
+wire                                       is_ebreak_dec;
+wire                                       is_mret_dec;
+wire                                       rs1_used_dec;
+wire                                       rs2_used_dec;
+wire                                       rd_used_dec;
+wire                                       pc_used_dec;
 wire       [`XLEN-1:0]                     alu_op1_dec;
 wire       [`XLEN-1:0]                     alu_op2_dec;
+wire       [5:0]                           alu_sel_dec;
 wire                                       csr_used_dec;
 wire       [11:0]                          csr_addr_dec;
 wire       [`XLEN-1:0]                     imm_dec;
 wire       [7:0]                           normal_logic_used_dec;
 wire                                       adder_used_dec;
+wire       [5:0]                           logic_adder_result_sel_dec;  
+wire                                       rd_result_sel_dec;
+wire                                       csr_result_sel_dec;  
+wire                                       pc_result_sel_dec;   
 
-DECODER u_DECODER (
-    .inst_i                (pfu2dpu_inst_reg         ),
-    .rs1_i                 (rs1_data_dec             ),
-    .rs2_i                 (rs2_data_dec             ),
+DECODER u_decoder (
+    .inst_i                   (pfu2dpu_inst_reg          ),
+    .pc_i                     (pfu2dpu_pc_reg            ),
+    .rs1_i                    (rs1_data_dec              ),
+    .rs2_i                    (rs2_data_dec              ),
+    .csr_reg_i                (csr_data_dec              ),
 
-    .rd_addr_o             (rd_addr_dec              ),
-    .rs1_addr_o            (rs1_addr_dec             ),
-    .rs2_addr_o            (rs2_addr_dec             ),
+    .is_sub_o                 (is_sub_dec                ), 
+    .is_branch_o              (is_branch_dec             ),
+    .is_ld_st_o               (is_ld_st_dec              ), 
+    .is_jal_o                 (is_jal_dec                ),
+    .is_jalr_o                (is_jalr_dec               ),
+    .is_lui_o                 (is_lui_dec                ),
+    .is_ecall_o               (is_ecall_dec              ),
+    .is_ebreak_o              (is_ebreak_dec             ),
+    .is_mret_o                (is_mret_dec               ),
+    .rs1_used_o               (rs1_used_dec              ),
+    .rs2_used_o               (rs2_used_dec              ),
+    .rd_used_o                (rd_used_dec               ),
+    .pc_used_o                (pc_used_dec               ),
+    .rd_addr_o                (rd_addr_dec               ),
+    .rs1_addr_o               (rs1_addr_dec              ),
+    .rs2_addr_o               (rs2_addr_dec              ),
+    .alu_sel_o                (alu_sel_dec               ),
+    .alu_op1_o                (alu_op1_dec               ),
+    .alu_op2_o                (alu_op2_dec               ),
+    .csr_used_o               (csr_used_dec              ),
+    .csr_addr_o               (csr_addr_dec              ),
+    .imm_o                    (imm_dec                   ),
+    .normal_logic_used_o      (normal_logic_used_dec     ),
+    .adder_used_o             (adder_used_dec            ),
+    .logic_adder_result_sel_o (logic_adder_result_sel_dec),
+    .rd_result_sel_o          (rd_result_sel_dec         ),
+    .csr_result_sel_o         (csr_result_sel_dec        ),
+    .pc_result_sel_o          (pc_result_sel_dec         )
 
-    .is_jalr_o             (is_jalr_dec              ),
-    .is_jal_o              (is_jal_dec               ),
-    .is_branch_o           (is_branch_dec            ),
-    .is_ld_st_o            (is_ld_st_dec             ),
-   // .is_auipc_o            (is_auipc_dec             ),
-    .is_lui_o              (is_lui_dec               ),
-
-    .alu_op1_o             (alu_op1_dec              ),
-    .alu_op2_o             (alu_op2_dec              ),
-
-    .csr_used_o            (csr_used_dec             ),
-    .csr_addr_o            (csr_addr_dec             ),
-    .imm_o                 (imm_dec                  ),
-    .normal_logic_used_o   (normal_logic_used_dec    ),
-    .adder_used_o          (adder_used_dec           )
 );
-
 
 
 endmodule
